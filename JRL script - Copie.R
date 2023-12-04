@@ -19,4 +19,17 @@ library(dplyr)
 dataset$Groupe <- cut(seq(nrow(dataset)),
                       breaks = 8, labels = 
                         c("Venezio", "Peas","Maize","Arabidopsis","A/M","P/M","P/A","P/A/M"))
-                                   
+               
+
+##Calcul des ddCT
+library(readxl)
+
+setwd("C:/Users/Elève/Desktop/D4")
+ddCT <- read_excel("ddCT.xlsx")
+
+ddCT$Groupe <- cut(seq(nrow(ddCT)),
+                      breaks = 8, labels = 
+                        c("Venezio", "Peas","Maize","Arabidopsis","A/M","P/M","P/A","P/A/M"))
+
+
+
