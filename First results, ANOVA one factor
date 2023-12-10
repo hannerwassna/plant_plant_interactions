@@ -1,0 +1,221 @@
+
+##Données qPCR
+
+# Charger données CT de la plaque avec le package readxl
+library(readxl)
+
+setwd("C:/Users/Elève/Desktop/D4")
+dataset <- read_excel("dataCT.xlsx")
+
+#Séparer les gènes visés et le gènes de référence
+
+gene_reference <- dataset[, c(5,6,7)]
+genes <- dataset[,c(2,3,4,8,9,10,11,12,13)]
+
+
+#regrouper les conditions -> Créer 8 groupes
+
+library(dplyr)
+
+dataset$Group <- cut(seq(nrow(dataset)),
+                         breaks = 8, labels = 
+                           c("Venezio", "Peas","Maize","Arabidopsis","A/M","P/M","P/A","P/A/M"))
+               
+colnames(dataset) <- c("Sample","TOR1","TOR2","TOR3","ABC-like1","ABC-like2","ABC-like3","WRKY1","WRKY2","WRKY3","D141","D142","D143","Conditions")
+
+#Moyenne des triplicats
+
+dataset$TOR <- rowMeans(dataset[, c("TOR1", "TOR2", "TOR3")],na.rm = TRUE)
+dataset <- dataset[, -c(2:4)]
+
+dataset$`ABC-like`<- rowMeans(dataset[, c("ABC-like1", "ABC-like2", "ABC-like3")],na.rm = TRUE)
+dataset <- dataset[, -c(2:4)]
+
+dataset$WRKY<- rowMeans(dataset[, c("WRKY1", "WRKY2", "WRKY3")],na.rm = TRUE)
+dataset <- dataset[, -c(2:4)]
+
+dataset$D14<- rowMeans(dataset[, c("D141", "D142", "D143")],na.rm = TRUE)
+dataset <- dataset[, -c(2:4)]
+
+#Package qPCRtools
+
+###Refaire des tables analysable par le package
+library(dplyr)
+library(qPCRtools)
+
+
+
+dataCT <- dataset %>% select(Sample, TOR)
+colnames(dataCT) <- c("Sample","Cq")
+
+##Création de la table sans le gène ABC-like
+data.table <- dataset %>% select(Sample, Conditions)
+data.table$Gene <- "Tor"
+data.table$bioRep <- 1
+
+#Table comme il faut pour ABC-like
+dataCT.ref <- dataset %>% select(Sample,`ABC-like`)
+colnames(dataCT.ref) <- c("Sample","Cq")
+dataCT.ref$Sample <- paste("Sample",33:64, sep = "")
+
+data.tableref <- dataCT.ref %>% select(Sample)
+data.tableref$Conditions <-dataset[, c(2)]
+data.tableref$Gene <- "ABC-like"
+data.tableref$bioRep <- 1
+
+##Fusionner la table 
+
+tableqPCR <- rbind(data.tableref,data.table)
+tableqPCR$Sample <- paste("Sample", 1:64, sep = "")
+
+cq.table <- rbind(dataCT,dataCT.ref)
+colnames(cq.table) <- c("Position", "Cq")
+colnames(tableqPCR) <- c("Position", "Group","Gene", "BioRep")
+
+##CalExp2ddCT
+
+cqtable = read.table(cq.table,header = TRUE)
+designe.table = read.table(tableqPCR, header = TRUE)
+
+
+
+result <- CalExp2ddCt(cq.table,
+                      tableqPCR,
+                      ref.gene ="ABC-like",
+                      ref.group = "Venezio")
+
+cq.table = read(dataset, header = TRUE)
+designe.table = read(dataset, header = TRUE)
+
+CalExp2ddCt(dataset,
+            dataset,
+            ref.gene = "ABC-like",
+            ref.group = "Venezio",
+            stat.method = "t.test",
+            remove.outliers = TRUE,
+            fig.type = "box",
+            fig.ncol = NULL) -> res
+
+
+
+##Calcul des ddCT
+library(readxl)
+
+setwd("C:/Users/Elève/Desktop/D4")
+ddCT <- read_excel("ddCT.xlsx")
+
+ddCT$Group <- cut(seq(nrow(ddCT)),
+                      breaks = 8, labels = 
+                        c("Venezio", "Peas","Maize","Arabidopsis","A/M","P/M","P/A","P/A/M"))
+
+library(ggplot2)
+
+ggplot(ddCT, aes(x = Group, y = TOR, fill=Group)) +
+  geom_boxplot() +
+  labs(title = "gène TOR",
+       x = "Groupe",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = Group, y = TOR, fill=Group)) +
+  geom_violin() +
+  labs(title = "gène TOR",
+       x = "Groupe",
+       y = "Expression relative (ddCT)")
+
+
+ggplot(ddCT, aes(x = Group, y = WRKY, fill=Group)) +
+  geom_boxplot() +
+  labs(title = "gene WRKY",
+       x = "Groupe",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = Group, y = WRKY, fill=Group)) +
+  geom_violin() +
+  labs(title = "gene WRKY",
+       x = "Groupe",
+       y = "Expression relative (ddCT)")
+
+
+ggplot(ddCT, aes(x = Group, y = D14,fill=Group)) +
+  geom_violin() +
+  labs(title = "gene D14",
+       x = "Groupe",
+       y = "Expression relative (ddCT)")
+
+mod<-lm(D14~Group,data=ddCT)
+summary(mod)
+anova(mod)
+
+mod<-lm(TOR~Group,data=ddCT)
+summary(mod)
+anova(mod)
+
+mod<-lm(WRKY~Group,data=ddCT)
+summary(mod)
+anova(mod)
+
+ddCT<-ddCT %>% 
+  mutate(diversity=1)
+
+ddCT[ddCT$Group%in%c("A/M","P/M","P/A"),"diversity"]<-2
+ddCT[ddCT$Group%in%c("P/A/M"),"diversity"]<-3
+ddCT[ddCT$Group%in%c("Venezio"),"diversity"]<-0
+
+ddCT$diversity<-as.factor(ddCT$diversity)
+
+
+mod<-lm(D14~diversity,data=ddCT)
+summary(mod)
+anova(mod)
+
+mod<-lm(TOR~diversity,data=ddCT)
+summary(mod)
+anova(mod)
+
+mod<-lm(WRKY~diversity,data=ddCT)
+summary(mod)
+anova(mod)
+
+ggplot(ddCT, aes(x = diversity, y = TOR, fill= diversity)) +
+  geom_boxplot() +
+  labs(title = "TOR gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = diversity, y = TOR, fill= diversity)) +
+  geom_violin() +
+  labs(title = "TOR gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = diversity, y = WRKY, fill= diversity)) +
+  geom_boxplot() +
+  labs(title = "WRKY  gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = diversity, y = WRKY, fill= diversity)) +
+  geom_violin() +
+  labs(title = "WRKY  gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = diversity, y = D14, fill= diversity)) +
+  geom_violin() +
+  labs(title = "D14  gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+ggplot(ddCT, aes(x = diversity, y = D14, fill= diversity)) +
+  geom_boxplot() +
+  labs(title = "D14  gene",
+       x = "level of diversity",
+       y = "Expression relative (ddCT)")
+
+
+ggplot(dataset, aes(x=Conditions, y= `ABC-like`, fill=Conditions)) +
+  geom_boxplot()
+
+mod<-lm(`ABC-like`~Conditions,data=dataset)
+summary(mod)
+anova(mod)
