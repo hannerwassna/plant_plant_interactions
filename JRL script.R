@@ -484,10 +484,16 @@ summary(mod)
 ddCT$diversity <- factor(ddCT$diversity)
 ddCT$Group <- factor(ddCT$Group)
 
+#Virer les valeurs manquantes de D14 
+
 ddCTD14 <- ddCT[, "D14", drop = FALSE]
 ddCTD14 <- cbind(ddCTD14, Group = ddCT$Group)
 ddCTD14 <- cbind(ddCTD14, diversity = ddCT$diversity)
 ddCTD14 <- na.omit(ddCTD14)
 
-mod_art_2facteurs <- art(formula = D14 ~ interaction(diversity, Group), data = ddCTD14)
+#modèle deux facteur interaction(groupe, diveristy)
+
+mod_art_2facteurs <- art(formula = D14 ~ interaction(diversity*Group), data = ddCTD14)
 summary(mod_art_2facteurs)
+
+
