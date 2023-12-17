@@ -52,7 +52,7 @@ library(readxl)
 setwd("C:/Users/Elève/Desktop/D4")
 ddCT <- read_excel("ddCT.xlsx")
 
-ddCT$Group <- cut(seq(nrow(ddCT)),
+dataset$Group <- cut(seq(nrow(dataset)),
                  breaks = 8, labels = 
                    c("Venezio", "Peas","Maize","Arabidopsis","A/M","P/M","P/A","P/A/M"))
 
@@ -378,6 +378,7 @@ anova(mod)
 
 #Toute les espèces
 
+
 data_species <- rbind(data_Peas,data_Arabi,data_Maize)
 
 ddCT <-ddCT %>% 
@@ -496,4 +497,18 @@ ddCTD14 <- na.omit(ddCTD14)
 mod_art_2facteurs <- art(formula = D14 ~ interaction(diversity*Group), data = ddCTD14)
 summary(mod_art_2facteurs)
 
+library(ggplot2)
 
+
+
+##Par échelle logarithmique
+ddCTlog <- ddCT
+ddCTlog$TOR <- log10(ddCT$TOR)
+ddCTlog$WRKY <- log10(ddCT$WRKY)
+ddCTlog$D14 <- log10(ddCT$D14)
+
+ #mnt homscedastique ?
+
+library(lmtest)
+model <- lm(D14 ~ diversity, data = ddCTlog)
+bptest(model)
