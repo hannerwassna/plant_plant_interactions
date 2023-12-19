@@ -112,6 +112,3 @@ kruskal.test(WRKY~Peas, data=ddCT_M_3)
 kruskal.test(WRKY~Arabidopsis, data=ddCT_M_3)
 kruskal.test(WRKY~Maize, data=ddCT_M_3)
 kruskal.test(WRKY~qPCR_plate, data=ddCT_M_3)
-
-
-
