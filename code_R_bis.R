@@ -56,7 +56,7 @@ bartlett_result <- bartlett.test(D14, data = ddCT_M_3)
 # Affichage des résultats
 print(bartlett_result)
 
-#MIXED MODEL WITH LMER
+#MIXED MODEL WITH LMER ----> DID NOT USED
 
 #Mixed model (pour le gène D14)
 ddCT_model_D14 <- lmer(ddCT_M_3$D14 ~ 1 + levels + group + (1|group) + (1|qPCR_plate) + levels:group + (1 | ddCT_M_3$D14), data = ddCT_M_3)
@@ -69,9 +69,6 @@ vif_result_TOR <- vif(ddCT_model_TOR)
 #Mixed model for WRKY
 ddCT_model_WRKY <- lmer(ddCT_M_3$WRKY ~ 1 + levels + group + (1|group) + (1|qPCR_plate) + levels:group + (1 | ddCT_M_3$WRKY), data = ddCT_M_3)
 vif_result_WRKY <- vif(ddCT_model_WRKY)
-
-#Cloud points of TOR
-
 
 
 #Mixed model with sommer
@@ -116,37 +113,5 @@ kruskal.test(WRKY~Arabidopsis, data=ddCT_M_3)
 kruskal.test(WRKY~Maize, data=ddCT_M_3)
 kruskal.test(WRKY~qPCR_plate, data=ddCT_M_3)
 
-#Calculation of the statistical power
 
-# Définir les paramètres
-alpha <- 0.05  # Niveau de signification
-n_per_group <- c(3,10,11, 4)  # Taille de l'échantillon par groupe (ajustez les valeurs selon votre scénario)
-num_groups <- length(n_per_group)  # Nombre de groupes
-effect_size <- 0.5  # Taille de l'effet
-
-# Définir une fonction pour effectuer le test de Kruskal-Wallis avec des tailles d'échantillon différentes
-run_kruskal_wallis <- function(n_per_group, effect_size) {
-  # Générer des données simulées avec un effet
-  set.seed(123)  # Pour la reproductibilité
-  data <- lapply(1:length(n_per_group), function(i) {
-    group_data <- data.frame(value = rnorm(n_per_group[i], mean = i * effect_size, sd = 1), group = rep(i, n_per_group[i]))
-    return(group_data)
-  })}
-
-# Répéter la simulation pour estimer le pouvoir statistique
-num_simulations <- 1000  # Nombre de simulations
-reject_count <- 0
-
-for (i in 1:num_simulations) {
-  p_value <- run_kruskal_wallis(n_per_group, effect_size)
-  
-  # Compter le nombre de rejets de l'hypothèse nulle
-  if (p_value < alpha) {
-    reject_count <- reject_count + 1
-  }
-}
-
-# Calculer le pouvoir statistique
-power <- reject_count / num_simulations
-cat("Le pouvoir statistique est :", power, "\n")
 
